@@ -48,3 +48,7 @@ app.post('/notificar', (req, res) => {
 app.listen(port, () => {
   console.log(`🚀 Servidor corriendo en puerto ${port}`);
 });
+app.get('/', (req, res) => {
+  res.send('🚀 Servidor funcionando correctamente en Railway!');
+});
+
