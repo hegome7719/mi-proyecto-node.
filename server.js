@@ -10,7 +10,8 @@ const firebaseCredentials = JSON.parse(Buffer.from(process.env.FIREBASE_CREDENTI
 // Inicializar Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(firebaseCredentials),
-  databaseURL: "https://<your-database-name>.firebaseio.com" // Cambia esto por tu URL de Firebase
+    databaseURL: "https://fata-express-default-rtdb.firebaseio.com/" // Tu URL de la base de datos
+
 });
 
 // Servir archivos estáticos si los necesitas
