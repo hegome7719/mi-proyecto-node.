@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const admin = require('firebase-admin');
+const cors = require('cors'); // Habilitar CORS
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -10,9 +11,11 @@ const firebaseCredentials = JSON.parse(Buffer.from(process.env.FIREBASE_CREDENTI
 // Inicializar Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(firebaseCredentials),
-    databaseURL: "https://fata-express-default-rtdb.firebaseio.com/" // Tu URL de la base de datos
-
+  databaseURL: "https://fata-express-default-rtdb.firebaseio.com/" // Tu URL de la base de datos
 });
+
+// Habilitar CORS para permitir solicitudes desde otras fuentes
+app.use(cors());
 
 // Servir archivos estáticos si los necesitas
 app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
@@ -47,14 +50,14 @@ app.post('/notificar', (req, res) => {
   console.log(`📩 Notificación del conductor ${numeroConductor} hacia el administrador`);
 
   const message = {
-  data: {
-    title: 'Nuevo formulario en espera',
-    body: `Conductor ${numeroConductor} ha enviado un formulario.`,
-    tipo: 'formulario',
-    numeroConductor: numeroConductor
-  },
-  token: adminToken
-};
+    data: {
+      title: 'Nuevo formulario en espera',
+      body: `Conductor ${numeroConductor} ha enviado un formulario.`,
+      tipo: 'formulario',
+      numeroConductor: numeroConductor
+    },
+    token: adminToken
+  };
 
   admin.messaging().send(message)
     .then((response) => {
