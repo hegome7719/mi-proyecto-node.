@@ -47,12 +47,14 @@ app.post('/notificar', (req, res) => {
   console.log(`📩 Notificación del conductor ${numeroConductor} hacia el administrador`);
 
   const message = {
-    notification: {
-      title: 'Nuevo formulario en espera',
-      body: `Conductor ${numeroConductor} ha enviado un formulario.`
-    },
-    token: adminToken
-  };
+  data: {
+    title: 'Nuevo formulario en espera',
+    body: `Conductor ${numeroConductor} ha enviado un formulario.`,
+    tipo: 'formulario',
+    numeroConductor: numeroConductor
+  },
+  token: adminToken
+};
 
   admin.messaging().send(message)
     .then((response) => {
