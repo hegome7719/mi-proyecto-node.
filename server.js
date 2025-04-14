@@ -74,3 +74,6 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(🚀 Servidor corriendo en puerto ${port});
 });
+
+
+ChatGPT a dit :
