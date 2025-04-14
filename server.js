@@ -10,8 +10,7 @@ const firebaseCredentials = JSON.parse(Buffer.from(process.env.FIREBASE_CREDENTI
 // Inicializar Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(firebaseCredentials),
-    databaseURL: "https://fata-express-default-rtdb.firebaseio.com/" // Tu URL de la base de datos
-
+  databaseURL: "https://fata-express-default-rtdb.firebaseio.com/" // Tu URL de la base de datos
 });
 
 // Servir archivos estáticos si los necesitas
@@ -44,12 +43,12 @@ app.post('/notificar', (req, res) => {
     return res.status(400).json({ mensaje: '❌ Faltan datos o no hay token del admin registrado.' });
   }
 
-  console.log(📩 Notificación del conductor ${numeroConductor} hacia el administrador);
+  console.log(`📩 Notificación del conductor ${numeroConductor} hacia el administrador`);
 
   const message = {
     notification: {
       title: 'Nuevo formulario en espera',
-      body: Conductor ${numeroConductor} ha enviado un formulario.
+      body: `Conductor ${numeroConductor} ha enviado un formulario.`
     },
     token: adminToken
   };
@@ -72,8 +71,6 @@ app.get('/', (req, res) => {
 
 // Iniciar servidor HTTP
 app.listen(port, () => {
-  console.log(🚀 Servidor corriendo en puerto ${port});
+  console.log(`🚀 Servidor corriendo en puerto ${port}`);
 });
 
-
-ChatGPT a dit :
