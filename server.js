@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const admin = require('firebase-admin');
 const app = express();
+const cors = require('cors'); // ✅ Agregar esta línea
 const port = process.env.PORT || 3000;
 
 // 🔐 Decodificar las credenciales desde variable de entorno BASE64
@@ -19,6 +20,7 @@ admin.initializeApp({
 app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
 
 // 🧠 Middleware para parsear JSON
+app.use(cors()); // ✅ Habilitar CORS
 app.use(express.json());
 
 // ✅ Variable global para guardar el token del administrador
