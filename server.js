@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 // Inicializar Firebase Admin SDK
-const serviceAccount = require('./ruta/a/tu/serviceAccountKey.json'); // asegúrate de poner la ruta correcta
+const serviceAccount = require('./ruta/a/tu/serviceAccountKey.json'); // ← Cambia esto por tu ruta real
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -21,18 +21,23 @@ app.post('/notificar', async (req, res) => {
     return res.status(400).json({ error: 'Falta el número del conductor' });
   }
 
+  // Obtener hora actual en formato HH:mm
   const horaActual = new Date();
   const hora = horaActual.getHours().toString().padStart(2, '0');
   const minutos = horaActual.getMinutes().toString().padStart(2, '0');
   const timeString = `${hora}:${minutos}`;
+
+  console.log(`⌚ Hora generada: ${timeString}`); // ← Debug
 
   const message = {
     data: {
       title: 'Conductor en espera',
       body: `El conductor ${numeroConductor} está esperando desde las ${timeString}`,
     },
-    topic: 'admin', // Asegúrate que los dispositivos estén suscritos a este topic
+    topic: 'admin',
   };
+
+  console.log('📦 Payload a enviar:', message); // ← Debug
 
   try {
     const response = await admin.messaging().send(message);
