@@ -44,19 +44,24 @@ app.post('/notificar', (req, res) => {
   console.log("🔐 Token del admin actual:", adminToken);
 
   const { numeroConductor } = req.body;
-
   if (!numeroConductor || !adminToken) {
     console.error("❌ Faltan datos. numeroConductor:", numeroConductor, "adminToken:", adminToken);
     return res.status(400).json({ mensaje: '❌ Faltan datos o no hay token del admin registrado.' });
   }
 
-  console.log(`📩 Notificación del conductor ${numeroConductor} hacia el administrador`);
+  // ─────── Capturamos la hora actual ───────
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const timeString = `${hours}:${minutes}`; // e.g. "09:50"
+
+  console.log(`📩 Notificación del conductor ${numeroConductor} a las ${timeString}`);
 
   const message = {
     notification: {
-    title: 'Conductor en espera',
-    body: `Conductor ${numeroConductor} en espera`,  // Aquí se pone el número del conductor
-      },
+      title: 'Conductor en espera',
+      body:  `Conductor ${numeroConductor} en espera ${timeString}`
+    },
     token: adminToken
   };
 
