@@ -54,9 +54,9 @@ app.post('/notificar', (req, res) => {
 
   const message = {
     notification: {
-      title: 'Nuevo formulario en espera',
-      body: `Conductor ${numeroConductor} ha enviado un formulario.`
-    },
+    title: 'Conductor en espera',
+    body: `Conductor ${numeroConductor} en espera`,  // Aquí se pone el número del conductor
+      },
     token: adminToken
   };
 
