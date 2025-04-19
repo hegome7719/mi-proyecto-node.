@@ -1,56 +1,89 @@
 const express = require('express');
+const path = require('path');
 const admin = require('firebase-admin');
-const cors = require('cors');
-
 const app = express();
-app.use(cors());
+const port = process.env.PORT || 3000;
+
+// 🔐 Decodificar las credenciales desde variable de entorno BASE64
+const firebaseCredentials = JSON.parse(
+  Buffer.from(process.env.FIREBASE_CREDENTIALS_BASE64, 'base64').toString('utf-8')
+);
+
+// 🚀 Inicializar Firebase Admin SDK
+admin.initializeApp({
+  credential: admin.credential.cert(firebaseCredentials),
+  databaseURL: "https://fata-express-default-rtdb.firebaseio.com/"
+});
+
+// 📁 Servir archivos estáticos (por ejemplo para verificación de dominio)
+app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
+
+// 🧠 Middleware para parsear JSON
 app.use(express.json());
 
-// Inicializar Firebase Admin SDK
-const serviceAccount = require('./ruta/a/tu/serviceAccountKey.json'); // ← Cambia esto por tu ruta real
+// ✅ Variable global para guardar el token del administrador
+let adminToken = null;
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+// 🛠 Ruta para registrar token del admin
+app.post('/registrar-token', (req, res) => {
+  const { token } = req.body;
 
-// Endpoint para enviar notificación
-app.post('/notificar', async (req, res) => {
-  const { numeroConductor } = req.body;
-
-  if (!numeroConductor) {
-    return res.status(400).json({ error: 'Falta el número del conductor' });
+  if (!token) {
+    console.error("❌ Token no proporcionado");
+    return res.status(400).json({ mensaje: '❌ Token no proporcionado' });
   }
 
-  // Obtener hora actual en formato HH:mm
-  const horaActual = new Date();
-  const hora = horaActual.getHours().toString().padStart(2, '0');
-  const minutos = horaActual.getMinutes().toString().padStart(2, '0');
-  const timeString = `${hora}:${minutos}`;
+  adminToken = token;
+  console.log('✅ Token del administrador registrado:', token);
+  res.json({ mensaje: '✅ Token del administrador guardado correctamente' });
+});
 
-  console.log(`⌚ Hora generada: ${timeString}`); // ← Debug
+// 📩 Ruta para enviar notificación desde el conductor
+app.post('/notificar', (req, res) => {
+  console.log("📥 Body recibido en /notificar:", req.body);
+  console.log("🔐 Token del admin actual:", adminToken);
+
+  const { numeroConductor } = req.body;
+  if (!numeroConductor || !adminToken) {
+    console.error("❌ Faltan datos. numeroConductor:", numeroConductor, "adminToken:", adminToken);
+    return res.status(400).json({ mensaje: '❌ Faltan datos o no hay token del admin registrado.' });
+  }
+
+  // ─────── Capturamos la hora actual ───────
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const timeString = `${hours}:${minutes}`; // e.g. "09:50"
+
+  console.log(`📩 Notificación del conductor ${numeroConductor} a las ${timeString}`);
 
   const message = {
-    data: {
-      title: 'Conductor en espera',
-      body: `El conductor ${numeroConductor} está esperando desde las ${timeString}`,
-    },
-    topic: 'admin',
-  };
+  data: {
+    title: 'Conductor en espera',
+    body: `Conductor ${numeroConductor} en espera ${timeString}`,
+    numeroConductor: numeroConductor,
+    hora: timeString
+  },
+  token: adminToken
+};
 
-  console.log('📦 Payload a enviar:', message); // ← Debug
-
-  try {
-    const response = await admin.messaging().send(message);
-    console.log('✅ Notificación enviada con éxito:', response);
-    res.status(200).json({ message: 'Notificación enviada al topic admin', response });
-  } catch (error) {
-    console.error('❌ Error al enviar la notificación:', error);
-    res.status(500).json({ error: 'Error al enviar la notificación', details: error });
-  }
+  admin.messaging().send(message)
+    .then((response) => {
+      console.log('✅ Notificación enviada al administrador:', response);
+      res.json({ mensaje: '✅ Notificación enviada correctamente.' });
+    })
+    .catch((error) => {
+      console.error('❌ Error al enviar la notificación:', error);
+      res.status(500).json({ mensaje: '❌ Error al enviar la notificación.' });
+    });
 });
 
-// Puerto
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en el puerto ${PORT}`);
+// 🌐 Ruta raíz para verificar que el servidor funciona
+app.get('/', (req, res) => {
+  res.send('🚀 Servidor funcionando correctamente en Railway!');
+});
+
+// 🚀 Iniciar servidor
+app.listen(port, () => {
+  console.log(`✅ Servidor corriendo en puerto ${port}`);
 });
