@@ -4,29 +4,32 @@ const admin = require('firebase-admin');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Decodificar las credenciales desde la variable de entorno base64
-const firebaseCredentials = JSON.parse(Buffer.from(process.env.FIREBASE_CREDENTIALS_BASE64, 'base64').toString('utf-8'));
+// 🔐 Decodificar las credenciales desde variable de entorno BASE64
+const firebaseCredentials = JSON.parse(
+  Buffer.from(process.env.FIREBASE_CREDENTIALS_BASE64, 'base64').toString('utf-8')
+);
 
-// Inicializar Firebase Admin SDK
+// 🚀 Inicializar Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(firebaseCredentials),
-  databaseURL: "https://fata-express-default-rtdb.firebaseio.com/" // Tu URL de la base de datos
+  databaseURL: "https://fata-express-default-rtdb.firebaseio.com/"
 });
 
-// Servir archivos estáticos si los necesitas
+// 📁 Servir archivos estáticos (por ejemplo para verificación de dominio)
 app.use('/.well-known', express.static(path.join(__dirname, '.well-known')));
 
-// Middleware para parsear JSON
+// 🧠 Middleware para parsear JSON
 app.use(express.json());
 
 // ✅ Variable global para guardar el token del administrador
 let adminToken = null;
 
-// 📌 Ruta para registrar el token del administrador
+// 🛠 Ruta para registrar token del admin
 app.post('/registrar-token', (req, res) => {
   const { token } = req.body;
 
   if (!token) {
+    console.error("❌ Token no proporcionado");
     return res.status(400).json({ mensaje: '❌ Token no proporcionado' });
   }
 
@@ -37,9 +40,13 @@ app.post('/registrar-token', (req, res) => {
 
 // 📩 Ruta para enviar notificación desde el conductor
 app.post('/notificar', (req, res) => {
+  console.log("📥 Body recibido en /notificar:", req.body);
+  console.log("🔐 Token del admin actual:", adminToken);
+
   const { numeroConductor } = req.body;
 
   if (!numeroConductor || !adminToken) {
+    console.error("❌ Faltan datos. numeroConductor:", numeroConductor, "adminToken:", adminToken);
     return res.status(400).json({ mensaje: '❌ Faltan datos o no hay token del admin registrado.' });
   }
 
@@ -64,13 +71,12 @@ app.post('/notificar', (req, res) => {
     });
 });
 
-// Ruta para verificar que el servidor está vivo
+// 🌐 Ruta raíz para verificar que el servidor funciona
 app.get('/', (req, res) => {
   res.send('🚀 Servidor funcionando correctamente en Railway!');
 });
 
-// Iniciar servidor HTTP
+// 🚀 Iniciar servidor
 app.listen(port, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${port}`);
+  console.log(`✅ Servidor corriendo en puerto ${port}`);
 });
-
