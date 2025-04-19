@@ -58,12 +58,14 @@ app.post('/notificar', (req, res) => {
   console.log(`📩 Notificación del conductor ${numeroConductor} a las ${timeString}`);
 
   const message = {
-    notification: {
-      title: 'Conductor en espera',
-      body:  `Conductor ${numeroConductor} en espera ${timeString}`
-    },
-    token: adminToken
-  };
+  data: {
+    title: 'Conductor en espera',
+    body: `Conductor ${numeroConductor} en espera ${timeString}`,
+    numeroConductor: numeroConductor,
+    hora: timeString
+  },
+  token: adminToken
+};
 
   admin.messaging().send(message)
     .then((response) => {
