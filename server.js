@@ -45,29 +45,23 @@ app.post('/notificar', (req, res) => {
   console.log("📥 Body recibido en /notificar:", req.body);
   console.log("🔐 Token del admin actual:", adminToken);
 
-  const { numeroConductor } = req.body;
-  if (!numeroConductor || !adminToken) {
-    console.error("❌ Faltan datos. numeroConductor:", numeroConductor, "adminToken:", adminToken);
+  const { numeroConductor, hora } = req.body;  // Recibimos la hora desde el dispositivo
+  if (!numeroConductor || !adminToken || !hora) {
+    console.error("❌ Faltan datos. numeroConductor:", numeroConductor, "adminToken:", adminToken, "hora:", hora);
     return res.status(400).json({ mensaje: '❌ Faltan datos o no hay token del admin registrado.' });
   }
 
-  // ─────── Capturamos la hora actual ───────
-  const now = new Date();
-  const hours = now.getHours().toString().padStart(2, '0');
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-  const timeString = `${hours}:${minutes}`; // e.g. "09:50"
-
-  console.log(`📩 Notificación del conductor ${numeroConductor} a las ${timeString}`);
+  console.log(`📩 Notificación del conductor ${numeroConductor} a las ${hora}`);
 
   const message = {
-  data: {
-    title: 'Conductor en espera',
-    body: `Conductor ${numeroConductor} en espera ${timeString}`,
-    numeroConductor: numeroConductor,
-    hora: timeString
-  },
-  token: adminToken
-};
+    data: {
+      title: 'Conductor en espera',
+      body: `Conductor ${numeroConductor} en espera a las ${hora}`,  // Usamos la hora recibida
+      numeroConductor: numeroConductor,
+      hora: hora // La hora enviada desde el dispositivo
+    },
+    token: adminToken
+  };
 
   admin.messaging().send(message)
     .then((response) => {
