@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const admin = require('firebase-admin');
 const app = express();
-const cors = require('cors'); // ✅ Agregar esta línea
+const cors = require('cors');
 const port = process.env.PORT || 3000;
 
 // 🔐 Decodificar las credenciales desde variable de entorno BASE64
@@ -64,7 +64,7 @@ app.post('/registrar-token-usuario', (req, res) => {
     });
 });
 
-// 📩 Ruta para enviar notificación desde el conductor
+// 📩 Ruta para enviar notificación a un usuario
 app.post('/notificar', (req, res) => {
   console.log("📥 Body recibido en /notificar:", req.body);
   console.log("🔐 Token del admin actual:", adminToken);
