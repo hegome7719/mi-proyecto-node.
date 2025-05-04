@@ -34,18 +34,15 @@ app.post('/notificar', async (req, res) => {
   }
 
   try {
-    // Obtener el token del admin desde Firestore
     const adminDoc = await admin.firestore().collection('usuarios').doc('admin').get();
     console.log("🔍 Documento del admin:", adminDoc.exists ? adminDoc.data() : "No encontrado");
 
     if (!adminDoc.exists) {
-      console.error("❌ No se encontró el token del administrador");
       return res.status(500).json({ mensaje: '❌ No se encontró el token del administrador.' });
     }
 
     const adminToken = adminDoc.data().fcmToken;
     if (!adminToken) {
-      console.error("❌ El token del administrador no está registrado");
       return res.status(500).json({ mensaje: '❌ El token del administrador no está registrado.' });
     }
 
@@ -81,8 +78,6 @@ app.post('/notificar', async (req, res) => {
       token: adminToken
     };
 
-    console.log("🔔 Enviando mensaje al administrador:", message);
-    // Enviar la notificación
     const response = await admin.messaging().send(message);
     console.log('✅ Notificación enviada al administrador:', response);
     res.json({ mensaje: '✅ Notificación enviada correctamente.' });
@@ -93,13 +88,12 @@ app.post('/notificar', async (req, res) => {
   }
 });
 
-// ✅ Nueva ruta para enviar notificación al conductor
+// ✅ Ruta para que el administrador notifique al conductor
 app.post('/notificar-conductor', async (req, res) => {
   const { numeroConductor } = req.body;
   console.log("📥 Body recibido en /notificar-conductor:", req.body);
 
   if (!numeroConductor) {
-    console.error("❌ Número de conductor no proporcionado");
     return res.status(400).json({ mensaje: '❌ Número de conductor no proporcionado' });
   }
 
@@ -108,13 +102,11 @@ app.post('/notificar-conductor', async (req, res) => {
     console.log("🔍 Documento del conductor:", conductorDoc.exists ? conductorDoc.data() : "No encontrado");
 
     if (!conductorDoc.exists) {
-      console.error(`❌ No se encontró el conductor con número ${numeroConductor}`);
       return res.status(404).json({ mensaje: `❌ No se encontró el conductor con número ${numeroConductor}` });
     }
 
     const fcmToken = conductorDoc.data().fcmToken;
     if (!fcmToken) {
-      console.error(`❌ El conductor ${numeroConductor} no tiene un token registrado`);
       return res.status(404).json({ mensaje: `❌ El conductor ${numeroConductor} no tiene un token registrado` });
     }
 
@@ -126,7 +118,6 @@ app.post('/notificar-conductor', async (req, res) => {
       token: fcmToken
     };
 
-    console.log("🔔 Enviando mensaje al conductor:", message);
     const response = await admin.messaging().send(message);
     console.log(`✅ Notificación enviada al conductor ${numeroConductor}:`, response);
 
@@ -135,6 +126,26 @@ app.post('/notificar-conductor', async (req, res) => {
   } catch (error) {
     console.error('❌ Error al enviar la notificación al conductor:', error);
     res.status(500).json({ mensaje: '❌ Error al enviar la notificación al conductor' });
+  }
+});
+
+// 🆕 Ruta para registrar el token del conductor
+app.post('/registrar-token-conductor', async (req, res) => {
+  const { numeroConductor, fcmToken } = req.body;
+
+  if (!numeroConductor || !fcmToken) {
+    return res.status(400).json({ mensaje: '❌ Número de conductor o token faltante' });
+  }
+
+  try {
+    await admin.firestore().collection('conductores').doc(numeroConductor).set(
+      { fcmToken },
+      { merge: true }
+    );
+    res.json({ mensaje: '✅ Token registrado correctamente' });
+  } catch (error) {
+    console.error('❌ Error al registrar el token del conductor:', error);
+    res.status(500).json({ mensaje: '❌ Error al registrar el token del conductor' });
   }
 });
 
