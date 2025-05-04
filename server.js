@@ -45,20 +45,44 @@ app.post('/notificar', (req, res) => {
   console.log("📥 Body recibido en /notificar:", req.body);
   console.log("🔐 Token del admin actual:", adminToken);
 
-  const { numeroConductor, hora } = req.body;  // Recibimos la hora desde el dispositivo
-  if (!numeroConductor || !adminToken || !hora) {
-    console.error("❌ Faltan datos. numeroConductor:", numeroConductor, "adminToken:", adminToken, "hora:", hora);
+  const { numeroConductor, hora, estado } = req.body;  // Recibimos la hora y el estado desde el dispositivo
+  if (!numeroConductor || !adminToken || !hora || !estado) {
+    console.error("❌ Faltan datos. numeroConductor:", numeroConductor, "adminToken:", adminToken, "hora:", hora, "estado:", estado);
     return res.status(400).json({ mensaje: '❌ Faltan datos o no hay token del admin registrado.' });
   }
 
-  console.log(`📩 Notificación del conductor ${numeroConductor} a las ${hora}`);
+  console.log(`📩 Notificación del conductor ${numeroConductor} a las ${hora}, Estado: ${estado}`);
 
+  // Personalizar el título y el cuerpo según el estado
+  let title = '';
+  let body = '';
+
+  switch (estado) {
+    case 'en espera':
+      title = 'Conductor en espera';
+      body = `Conductor ${numeroConductor} en espera a las ${hora}`;
+      break;
+    case 'cargado':
+      title = 'Conductor cargado';
+      body = `Conductor ${numeroConductor} cargado a las ${hora}`;
+      break;
+    case 'descargado':
+      title = 'Conductor descargado';
+      body = `Conductor ${numeroConductor} descargado a las ${hora}`;
+      break;
+    default:
+      title = 'Estado desconocido';
+      body = `Conductor ${numeroConductor} tiene un estado desconocido a las ${hora}`;
+      break;
+  }
+
+  // Enviar la notificación
   const message = {
     data: {
-      title: 'Conductor en espera',
-      body: `Conductor ${numeroConductor} en espera a las ${hora}`,  // Usamos la hora recibida
+      title: title,
+      body: body,
       numeroConductor: numeroConductor,
-      hora: hora // La hora enviada desde el dispositivo
+      hora: hora
     },
     token: adminToken
   };
