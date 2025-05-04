@@ -29,80 +29,92 @@ app.post('/notificar', async (req, res) => {
   const { numeroConductor, hora, estado } = req.body;
 
   if (!numeroConductor || !hora || !estado) {
+    console.error("❌ Faltan datos en el cuerpo de la solicitud");
     return res.status(400).json({ mensaje: '❌ Faltan datos.' });
   }
 
-  // Obtener el token del admin desde Firestore
-  const adminDoc = await admin.firestore().collection('usuarios').doc('admin').get();
-  if (!adminDoc.exists) {
-    return res.status(500).json({ mensaje: '❌ No se encontró el token del administrador.' });
+  try {
+    // Obtener el token del admin desde Firestore
+    const adminDoc = await admin.firestore().collection('usuarios').doc('admin').get();
+    console.log("🔍 Documento del admin:", adminDoc.exists ? adminDoc.data() : "No encontrado");
+
+    if (!adminDoc.exists) {
+      console.error("❌ No se encontró el token del administrador");
+      return res.status(500).json({ mensaje: '❌ No se encontró el token del administrador.' });
+    }
+
+    const adminToken = adminDoc.data().fcmToken;
+    if (!adminToken) {
+      console.error("❌ El token del administrador no está registrado");
+      return res.status(500).json({ mensaje: '❌ El token del administrador no está registrado.' });
+    }
+
+    let title = '';
+    let body = '';
+
+    switch (estado.toLowerCase()) {
+      case 'en espera':
+        title = 'Conductor en espera';
+        body = `Conductor ${numeroConductor} en espera a las ${hora}`;
+        break;
+      case 'cargado':
+        title = 'Conductor cargado';
+        body = `Conductor ${numeroConductor} cargado a las ${hora}`;
+        break;
+      case 'descargado':
+        title = 'Conductor descargado';
+        body = `Conductor ${numeroConductor} descargado a las ${hora}`;
+        break;
+      default:
+        title = 'Estado desconocido';
+        body = `Conductor ${numeroConductor} tiene un estado desconocido a las ${hora}`;
+        break;
+    }
+
+    const message = {
+      data: {
+        title,
+        body,
+        numeroConductor,
+        hora
+      },
+      token: adminToken
+    };
+
+    console.log("🔔 Enviando mensaje al administrador:", message);
+    // Enviar la notificación
+    const response = await admin.messaging().send(message);
+    console.log('✅ Notificación enviada al administrador:', response);
+    res.json({ mensaje: '✅ Notificación enviada correctamente.' });
+
+  } catch (error) {
+    console.error('❌ Error en el servidor al procesar la notificación:', error);
+    res.status(500).json({ mensaje: '❌ Error al enviar la notificación.' });
   }
-
-  const adminToken = adminDoc.data().fcmToken;
-  if (!adminToken) {
-    return res.status(500).json({ mensaje: '❌ El token del administrador no está registrado.' });
-  }
-
-  let title = '';
-  let body = '';
-
-  switch (estado.toLowerCase()) {
-    case 'en espera':
-      title = 'Conductor en espera';
-      body = `Conductor ${numeroConductor} en espera a las ${hora}`;
-      break;
-    case 'cargado':
-      title = 'Conductor cargado';
-      body = `Conductor ${numeroConductor} cargado a las ${hora}`;
-      break;
-    case 'descargado':
-      title = 'Conductor descargado';
-      body = `Conductor ${numeroConductor} descargado a las ${hora}`;
-      break;
-    default:
-      title = 'Estado desconocido';
-      body = `Conductor ${numeroConductor} tiene un estado desconocido a las ${hora}`;
-      break;
-  }
-
-  const message = {
-    data: {
-      title,
-      body,
-      numeroConductor,
-      hora
-    },
-    token: adminToken
-  };
-
-  admin.messaging().send(message)
-    .then(response => {
-      console.log('✅ Notificación enviada al administrador:', response);
-      res.json({ mensaje: '✅ Notificación enviada correctamente.' });
-    })
-    .catch(error => {
-      console.error('❌ Error al enviar la notificación:', error);
-      res.status(500).json({ mensaje: '❌ Error al enviar la notificación.' });
-    });
 });
 
 // ✅ Nueva ruta para enviar notificación al conductor
 app.post('/notificar-conductor', async (req, res) => {
   const { numeroConductor } = req.body;
+  console.log("📥 Body recibido en /notificar-conductor:", req.body);
 
   if (!numeroConductor) {
+    console.error("❌ Número de conductor no proporcionado");
     return res.status(400).json({ mensaje: '❌ Número de conductor no proporcionado' });
   }
 
   try {
     const conductorDoc = await admin.firestore().collection('conductores').doc(numeroConductor).get();
+    console.log("🔍 Documento del conductor:", conductorDoc.exists ? conductorDoc.data() : "No encontrado");
 
     if (!conductorDoc.exists) {
+      console.error(`❌ No se encontró el conductor con número ${numeroConductor}`);
       return res.status(404).json({ mensaje: `❌ No se encontró el conductor con número ${numeroConductor}` });
     }
 
     const fcmToken = conductorDoc.data().fcmToken;
     if (!fcmToken) {
+      console.error(`❌ El conductor ${numeroConductor} no tiene un token registrado`);
       return res.status(404).json({ mensaje: `❌ El conductor ${numeroConductor} no tiene un token registrado` });
     }
 
@@ -114,6 +126,7 @@ app.post('/notificar-conductor', async (req, res) => {
       token: fcmToken
     };
 
+    console.log("🔔 Enviando mensaje al conductor:", message);
     const response = await admin.messaging().send(message);
     console.log(`✅ Notificación enviada al conductor ${numeroConductor}:`, response);
 
