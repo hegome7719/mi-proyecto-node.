@@ -44,7 +44,8 @@ app.post('/registrar-token', (req, res) => {
 app.post('/notificar', (req, res) => {
   console.log("📥 Body recibido en /notificar:", req.body);
   console.log("🔐 Token del admin actual:", adminToken);
-
+  console.log("Datos recibidos: ", req.body);
+  
   const { numeroConductor, hora, estado } = req.body;  // Recibimos la hora y el estado desde el dispositivo
   if (!numeroConductor || !adminToken || !hora || !estado) {
     console.error("❌ Faltan datos. numeroConductor:", numeroConductor, "adminToken:", adminToken, "hora:", hora, "estado:", estado);
