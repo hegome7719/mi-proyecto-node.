@@ -58,7 +58,9 @@ app.post('/notificar', (req, res) => {
   let title = '';
   let body = '';
 
-  switch (estado) {
+  console.log("🔍 Estado recibido desde la app:", estado);
+
+ switch (estado.toLowerCase()) {
     case 'en espera':
       title = 'Conductor en espera';
       body = `Conductor ${numeroConductor} en espera a las ${hora}`;
