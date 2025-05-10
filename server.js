@@ -92,47 +92,55 @@ app.post('/notificar', (req, res) => {
     });
 });
 
-// 📩 Ruta para notificar a un conductor por UID
+// 📩 Ruta para notificar a un conductor (POST /notificar-conductor)
 app.post('/notificar-conductor', async (req, res) => {
-  const { uid, titulo, cuerpo } = req.body;
+  const { numeroConductor, titulo, cuerpo } = req.body;
+  console.log(`🔹 Número de conductor recibido: ${numeroConductor}`);
 
-  if (!uid || !titulo || !cuerpo) {
-    return res.status(400).json({ mensaje: '❌ Faltan campos requeridos (uid, titulo, cuerpo)' });
+  if (!numeroConductor || !titulo || !cuerpo) {
+    return res.status(400).json({ mensaje: '❌ Faltan campos requeridos (numeroConductor, titulo, cuerpo)' });
   }
 
   try {
+    // Buscar el documento del conductor en Firestore usando el número de conductor
     const snapshot = await admin.firestore()
       .collection('conductores')
-      .where('uid', '==', uid)
+      .where('numeroConductor', '==', numeroConductor)
       .get();
 
     if (snapshot.empty) {
-      return res.status(404).json({ mensaje: '❌ Conductor no encontrado con ese UID' });
+      console.error(`🔴 Conductor con número ${numeroConductor} no encontrado en Firestore`);
+      return res.status(404).json({ mensaje: '❌ Conductor no encontrado' });
     }
 
+    // Obtener el token del conductor desde el primer documento encontrado
     const conductorDoc = snapshot.docs[0];
-    const fcmToken = conductorDoc.data().fcmToken;
+    const token = conductorDoc.data().token;
 
-    if (!fcmToken) {
+    if (!token) {
+      console.error(`🔴 El conductor con número ${numeroConductor} no tiene token registrado`);
       return res.status(400).json({ mensaje: '❌ El conductor no tiene token registrado' });
     }
 
+    console.log(`✅ Token del conductor encontrado: ${token}`);
+
+    // Construir el mensaje de notificación
     const message = {
       notification: {
         title: titulo,
         body: cuerpo
       },
-      token: fcmToken
+      token: token
     };
 
+    // Enviar la notificación vía Firebase Admin
     const response = await admin.messaging().send(message);
-    console.log('✅ Notificación enviada al conductor:', response);
-
-    res.json({ mensaje: '✅ Notificación enviada correctamente al conductor.' });
+    console.log(`✅ Notificación enviada al conductor: ${response}`);
+    res.status(200).json({ mensaje: '✅ Notificación enviada al conductor' });
 
   } catch (error) {
-    console.error('❌ Error al enviar la notificación al conductor:', error);
-    res.status(500).json({ mensaje: '❌ Error interno del servidor.' });
+    console.error(`🔴 Error al notificar al conductor:`, error);
+    res.status(500).json({ mensaje: '❌ Error al notificar al conductor' });
   }
 });
 
