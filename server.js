@@ -107,28 +107,27 @@ app.post('/notificar-conductor', async (req, res) => {
   }
 
   try {
-    // Buscar conductor en Firestore
-    console.log(`🔍 Buscando conductor con número: ${numeroConductor}`);
-    const snapshot = await admin.firestore()
+    // Buscar conductor en Firestore usando el ID del documento (numeroConductor)
+    console.log(`🔍 Buscando conductor con ID: ${numeroConductor}`);
+    const conductorDoc = await admin.firestore()
       .collection('conductores')
-      .where('numeroConductor', '==', numeroConductor)
+      .doc(numeroConductor)  // Accede directamente al documento con ID = numeroConductor
       .get();
 
     // Verificar si se encontró el conductor
-    if (snapshot.empty) {
-      console.error(`🔴 Conductor con número ${numeroConductor} no encontrado en Firestore`);
+    if (!conductorDoc.exists) {
+      console.error(`🔴 Conductor con ID ${numeroConductor} no encontrado en Firestore`);
       return res.status(404).json({ mensaje: '❌ Conductor no encontrado' });
     }
 
     // Extraer datos del documento del conductor
-    const conductorDoc = snapshot.docs[0];
     const conductorData = conductorDoc.data();
     console.log(`✅ Conductor encontrado: ID: ${conductorDoc.id}, Datos: ${JSON.stringify(conductorData)}`);
 
     // Verificar si tiene token
-    const token = conductorData.token;
+    const token = conductorData.fcmToken;  // Usamos fcmToken en lugar de token
     if (!token) {
-      console.error(`🔴 El conductor con número ${numeroConductor} no tiene token registrado`);
+      console.error(`🔴 El conductor con ID ${numeroConductor} no tiene token registrado`);
       return res.status(400).json({ mensaje: '❌ El conductor no tiene token registrado' });
     }
 
@@ -155,7 +154,6 @@ app.post('/notificar-conductor', async (req, res) => {
     res.status(500).json({ mensaje: '❌ Error al notificar al conductor' });
   }
 });
-
 
 // 🌐 Ruta raíz
 app.get('/', (req, res) => {
