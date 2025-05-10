@@ -95,36 +95,46 @@ app.post('/notificar', (req, res) => {
 // 📩 Ruta para notificar a un conductor (POST /notificar-conductor)
 app.post('/notificar-conductor', async (req, res) => {
   const { numeroConductor, titulo, cuerpo } = req.body;
-  console.log(`🔹 Número de conductor recibido: ${numeroConductor}`);
 
+  // Log inicial de recepción
+  console.log(`📥 Solicitud recibida para notificar al conductor`);
+  console.log(`🔹 Datos recibidos -> númeroConductor: ${numeroConductor}, título: ${titulo}, cuerpo: ${cuerpo}`);
+
+  // Validación de campos requeridos
   if (!numeroConductor || !titulo || !cuerpo) {
+    console.warn(`⚠️ Faltan campos requeridos`);
     return res.status(400).json({ mensaje: '❌ Faltan campos requeridos (numeroConductor, titulo, cuerpo)' });
   }
 
   try {
-    // Buscar el documento del conductor en Firestore usando el número de conductor
+    // Buscar conductor en Firestore
+    console.log(`🔍 Buscando conductor con número: ${numeroConductor}`);
     const snapshot = await admin.firestore()
       .collection('conductores')
       .where('numeroConductor', '==', numeroConductor)
       .get();
 
+    // Verificar si se encontró el conductor
     if (snapshot.empty) {
       console.error(`🔴 Conductor con número ${numeroConductor} no encontrado en Firestore`);
       return res.status(404).json({ mensaje: '❌ Conductor no encontrado' });
     }
 
-    // Obtener el token del conductor desde el primer documento encontrado
+    // Extraer datos del documento del conductor
     const conductorDoc = snapshot.docs[0];
-    const token = conductorDoc.data().token;
+    const conductorData = conductorDoc.data();
+    console.log(`✅ Conductor encontrado: ID: ${conductorDoc.id}, Datos: ${JSON.stringify(conductorData)}`);
 
+    // Verificar si tiene token
+    const token = conductorData.token;
     if (!token) {
       console.error(`🔴 El conductor con número ${numeroConductor} no tiene token registrado`);
       return res.status(400).json({ mensaje: '❌ El conductor no tiene token registrado' });
     }
 
-    console.log(`✅ Token del conductor encontrado: ${token}`);
+    console.log(`✅ Token del conductor: ${token}`);
 
-    // Construir el mensaje de notificación
+    // Construir y enviar mensaje
     const message = {
       notification: {
         title: titulo,
@@ -133,16 +143,19 @@ app.post('/notificar-conductor', async (req, res) => {
       token: token
     };
 
-    // Enviar la notificación vía Firebase Admin
+    console.log(`📤 Enviando notificación al token: ${token}`);
     const response = await admin.messaging().send(message);
-    console.log(`✅ Notificación enviada al conductor: ${response}`);
+
+    // Confirmación
+    console.log(`✅ Notificación enviada correctamente: ${response}`);
     res.status(200).json({ mensaje: '✅ Notificación enviada al conductor' });
 
   } catch (error) {
-    console.error(`🔴 Error al notificar al conductor:`, error);
+    console.error(`❌ Error al enviar la notificación al conductor:`, error);
     res.status(500).json({ mensaje: '❌ Error al notificar al conductor' });
   }
 });
+
 
 // 🌐 Ruta raíz
 app.get('/', (req, res) => {
